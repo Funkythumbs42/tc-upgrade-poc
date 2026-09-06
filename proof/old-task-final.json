@@ -1,0 +1,8 @@
+{
+    "arn": "arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b",
+    "lastStatus": "STOPPED",
+    "stoppedAt": "2026-09-06T21:03:45.850000+00:00",
+    "startedAt": "2026-09-06T21:01:30.266000+00:00",
+    "stopCode": "ServiceSchedulerInitiated",
+    "stoppedReason": "Scaling activity initiated by (deployment ecs-svc/8815402689408838932)"
+}

@@ -1,0 +1,6 @@
+[
+    "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+    "arn:aws:ecs:eu-west-1:784318225077:service/tc-upgrade-poc-cluster/tc-upgrade-poc-svc",
+    "arn:aws:ecs:eu-west-1:784318225077:cluster/tc-upgrade-poc-cluster",
+    "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:2"
+]

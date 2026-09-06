@@ -1,0 +1,244 @@
+[2026-09-06T21:00:18Z] === Provisioning tc-upgrade-poc in eu-west-1 ===
+[2026-09-06T21:00:20Z] VPC=vpc-0f76dfac7c9499bd8 subnets=subnet-0d92bf163d29c842b,subnet-004d5b68e59192426,subnet-024f1af47262b68ca
+[2026-09-06T21:00:21Z] Reusing task SG sg-053c8a6320147b257
+[2026-09-06T21:00:22Z] Reusing EFS SG sg-068f9f7fa073dcf66
+[2026-09-06T21:00:23Z] Reusing EFS fs-05f94f48dc5784fab
+[2026-09-06T21:00:24Z] Reusing mount target fsmt-0b515bc6049252754 in subnet-0d92bf163d29c842b
+[2026-09-06T21:00:24Z] Reusing mount target fsmt-0427b0fac1d6ff708 in subnet-004d5b68e59192426
+[2026-09-06T21:00:24Z] Waiting for EFS mount targets...
+[2026-09-06T21:00:25Z] EFS mount targets ready.
+[2026-09-06T21:00:28Z] Log group /ecs/tc-upgrade-poc
+[2026-09-06T21:00:29Z] Reusing IAM role tc-upgrade-poc-ecsTaskExecutionRole
+[2026-09-06T21:00:31Z] Reusing IAM role tc-upgrade-poc-ecsTaskRole
+[2026-09-06T21:00:32Z] Reusing ECR repo tc-upgrade-poc
+[2026-09-06T21:00:32Z] Building and pushing image...
+WARNING! Your password will be stored unencrypted in /root/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+
+Login Succeeded
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 370B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for public.ecr.aws/docker/library/python:3.12-alpine
+#2 DONE 0.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 1.67kB done
+#4 DONE 0.0s
+
+#5 [1/4] FROM public.ecr.aws/docker/library/python:3.12-alpine@sha256:b64631e04e4920160c50fbe8d8df828f7f35f06f425cb44aa09bca53e708a35a
+#5 resolve public.ecr.aws/docker/library/python:3.12-alpine@sha256:b64631e04e4920160c50fbe8d8df828f7f35f06f425cb44aa09bca53e708a35a done
+#5 sha256:2014fd3d47b2c2dd4dedc765822ac60ae269f3efa0e614f46ae29f540c7f1235 11.53MB / 16.35MB 0.1s
+#5 sha256:ed62c91ccd94e36a928e96d704cfcf20861302590245cc12aa89a15a5d6be29b 0B / 248B 0.1s
+#5 sha256:b64631e04e4920160c50fbe8d8df828f7f35f06f425cb44aa09bca53e708a35a 10.30kB / 10.30kB done
+#5 sha256:78e98729f8fc4099e53cffb3fe59fd15b18dfa4ace8c914dee0cefa5320068eb 1.74kB / 1.74kB done
+#5 sha256:28eb0cb65acb65b970e85c0dc57d10067868fae8dd00d072413df273132123ac 5.43kB / 5.43kB done
+#5 sha256:55afa1ecc21d2bb5e5045f32dafee56272ffd89860bac26f6c32123439af26a4 2.10MB / 3.85MB 0.1s
+#5 sha256:47393b668ce535d06e8967917d424c177e2ecccae83856d48b2e99164f8cc6cb 408.09kB / 408.09kB 0.1s done
+#5 sha256:2014fd3d47b2c2dd4dedc765822ac60ae269f3efa0e614f46ae29f540c7f1235 16.35MB / 16.35MB 0.1s done
+#5 sha256:ed62c91ccd94e36a928e96d704cfcf20861302590245cc12aa89a15a5d6be29b 248B / 248B 0.1s done
+#5 sha256:55afa1ecc21d2bb5e5045f32dafee56272ffd89860bac26f6c32123439af26a4 3.85MB / 3.85MB 0.1s done
+#5 extracting sha256:55afa1ecc21d2bb5e5045f32dafee56272ffd89860bac26f6c32123439af26a4 0.1s
+#5 extracting sha256:55afa1ecc21d2bb5e5045f32dafee56272ffd89860bac26f6c32123439af26a4 0.1s done
+#5 extracting sha256:47393b668ce535d06e8967917d424c177e2ecccae83856d48b2e99164f8cc6cb 0.1s
+#5 extracting sha256:47393b668ce535d06e8967917d424c177e2ecccae83856d48b2e99164f8cc6cb 0.1s done
+#5 extracting sha256:2014fd3d47b2c2dd4dedc765822ac60ae269f3efa0e614f46ae29f540c7f1235
+#5 extracting sha256:2014fd3d47b2c2dd4dedc765822ac60ae269f3efa0e614f46ae29f540c7f1235 0.6s done
+#5 extracting sha256:ed62c91ccd94e36a928e96d704cfcf20861302590245cc12aa89a15a5d6be29b
+#5 extracting sha256:ed62c91ccd94e36a928e96d704cfcf20861302590245cc12aa89a15a5d6be29b 0.2s done
+#5 DONE 1.3s
+
+#6 [2/4] WORKDIR /app
+#6 DONE 0.2s
+
+#7 [3/4] COPY app.py /app/app.py
+#7 DONE 0.2s
+
+#8 [4/4] RUN mkdir -p /data
+#8 DONE 0.4s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 0.8s done
+#9 writing image sha256:7602fb96d879efa4c3ef3909acfcbee82f30426077944eb34f7229b5373ff457 done
+#9 naming to 784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1 done
+#9 naming to 784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:latest done
+#9 DONE 0.8s
+The push refers to repository [784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc]
+a02375fecc47: Preparing
+f7d49fa6b2cc: Preparing
+c942875fa120: Preparing
+4098ad033525: Preparing
+e5ccda0fbf6b: Preparing
+3ca4be2c6e9a: Preparing
+34884abbe928: Preparing
+3ca4be2c6e9a: Waiting
+34884abbe928: Waiting
+f7d49fa6b2cc: Pushed
+c942875fa120: Pushed
+a02375fecc47: Pushed
+4098ad033525: Pushed
+3ca4be2c6e9a: Pushed
+34884abbe928: Pushed
+e5ccda0fbf6b: Pushed
+v1: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622f1d6d31 size: 1776
+The push refers to repository [784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc]
+a02375fecc47: Preparing
+f7d49fa6b2cc: Preparing
+c942875fa120: Preparing
+4098ad033525: Preparing
+e5ccda0fbf6b: Preparing
+3ca4be2c6e9a: Preparing
+34884abbe928: Preparing
+3ca4be2c6e9a: Waiting
+34884abbe928: Waiting
+a02375fecc47: Layer already exists
+f7d49fa6b2cc: Layer already exists
+c942875fa120: Layer already exists
+4098ad033525: Layer already exists
+e5ccda0fbf6b: Layer already exists
+3ca4be2c6e9a: Layer already exists
+34884abbe928: Layer already exists
+latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622f1d6d31 size: 1776
+[2026-09-06T21:00:45Z] Image pushed 784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1
+[2026-09-06T21:00:47Z] Created cluster tc-upgrade-poc-cluster
+[2026-09-06T21:00:48Z] Registered task def arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1
+{
+    "service": {
+        "serviceArn": "arn:aws:ecs:eu-west-1:784318225077:service/tc-upgrade-poc-cluster/tc-upgrade-poc-svc",
+        "serviceName": "tc-upgrade-poc-svc",
+        "clusterArn": "arn:aws:ecs:eu-west-1:784318225077:cluster/tc-upgrade-poc-cluster",
+        "loadBalancers": [],
+        "serviceRegistries": [],
+        "status": "ACTIVE",
+        "desiredCount": 1,
+        "runningCount": 0,
+        "pendingCount": 0,
+        "launchType": "FARGATE",
+        "platformVersion": "LATEST",
+        "platformFamily": "Linux",
+        "taskDefinition": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+        "deploymentConfiguration": {
+            "deploymentCircuitBreaker": {
+                "enable": true,
+                "rollback": true,
+                "resetOnHealthyTask": true,
+                "thresholdConfiguration": {
+                    "type": "BOUNDED_PERCENT",
+                    "value": 50
+                }
+            },
+            "maximumPercent": 100,
+            "minimumHealthyPercent": 0,
+            "strategy": "ROLLING",
+            "bakeTimeInMinutes": 0
+        },
+        "deployments": [
+            {
+                "id": "ecs-svc/8815402689408838932",
+                "status": "PRIMARY",
+                "taskDefinition": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+                "desiredCount": 0,
+                "pendingCount": 0,
+                "runningCount": 0,
+                "failedTasks": 0,
+                "createdAt": "2026-09-06T21:00:51.035000+00:00",
+                "updatedAt": "2026-09-06T21:00:51.035000+00:00",
+                "launchType": "FARGATE",
+                "platformVersion": "1.4.0",
+                "platformFamily": "Linux",
+                "networkConfiguration": {
+                    "awsvpcConfiguration": {
+                        "subnets": [
+                            "subnet-0d92bf163d29c842b",
+                            "subnet-004d5b68e59192426"
+                        ],
+                        "securityGroups": [
+                            "sg-053c8a6320147b257"
+                        ],
+                        "assignPublicIp": "ENABLED"
+                    }
+                },
+                "rolloutState": "IN_PROGRESS",
+                "rolloutStateReason": "ECS deployment ecs-svc/8815402689408838932 in progress."
+            }
+        ],
+        "roleArn": "arn:aws:iam::784318225077:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+        "events": [],
+        "createdAt": "2026-09-06T21:00:51.035000+00:00",
+        "currentServiceRevisions": [
+            {
+                "arn": "arn:aws:ecs:eu-west-1:784318225077:service-revision/tc-upgrade-poc-cluster/tc-upgrade-poc-svc/8815402689408838932",
+                "requestedTaskCount": 0,
+                "runningTaskCount": 0,
+                "pendingTaskCount": 0
+            }
+        ],
+        "placementConstraints": [],
+        "placementStrategy": [],
+        "networkConfiguration": {
+            "awsvpcConfiguration": {
+                "subnets": [
+                    "subnet-0d92bf163d29c842b",
+                    "subnet-004d5b68e59192426"
+                ],
+                "securityGroups": [
+                    "sg-053c8a6320147b257"
+                ],
+                "assignPublicIp": "ENABLED"
+            }
+        },
+        "healthCheckGracePeriodSeconds": 0,
+        "schedulingStrategy": "REPLICA",
+        "deploymentController": {
+            "type": "ECS"
+        },
+        "tags": [
+            {
+                "key": "Project",
+                "value": "tc-upgrade-poc"
+            },
+            {
+                "key": "KeepUntil",
+                "value": "same-day-teardown"
+            },
+            {
+                "key": "Owner",
+                "value": "greg"
+            }
+        ],
+        "createdBy": "arn:aws:iam::784318225077:user/Greg",
+        "enableECSManagedTags": false,
+        "propagateTags": "NONE",
+        "enableExecuteCommand": true,
+        "availabilityZoneRebalancing": "DISABLED",
+        "resourceManagementType": "CUSTOMER"
+    }
+}
+[2026-09-06T21:00:51Z] Created service tc-upgrade-poc-svc
+[2026-09-06T21:00:51Z] Waiting for service tc-upgrade-poc-svc to become stable (timeout 600s)...
+[2026-09-06T21:01:38Z] Service is stable.
+[2026-09-06T21:01:38Z] v1 running task: arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b
+[2026-09-06T21:01:55Z] === Provision complete ===
+[2026-09-06T21:01:55Z] State file: /workspace/tc-upgrade-poc/.state.env
+export VPC_ID=vpc-0f76dfac7c9499bd8
+export SUBNET1=subnet-0d92bf163d29c842b
+export SUBNET2=subnet-004d5b68e59192426
+export SUBNET3=subnet-024f1af47262b68ca
+export TASK_SG=sg-053c8a6320147b257
+export EFS_SG=sg-068f9f7fa073dcf66
+export FS_ID=fs-05f94f48dc5784fab
+export EXEC_ROLE_ARN=arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskExecutionRole
+export TASK_ROLE_ARN=arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskRole
+export ECR_URI=784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc
+export TD_V1_ARN=arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1
+export TD_V1_TASK_ARN=arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b
+EXIT:0

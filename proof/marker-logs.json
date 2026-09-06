@@ -1,0 +1,10 @@
+[
+    {
+        "ts": 1788728493512,
+        "msg": "WROTE_MARKER version=v1 path=/data/marker.txt"
+    },
+    {
+        "ts": 1788728655544,
+        "msg": "FOUND_MARKER version=v2 content='written_by=v1\\nts=2026-09-06T21:01:33Z'"
+    }
+]

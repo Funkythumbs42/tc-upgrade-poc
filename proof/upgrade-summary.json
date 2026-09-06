@@ -1,0 +1,15 @@
+{
+  "preTaskArn": "arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b",
+  "postTaskArn": "arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/0e05c8e4d01d4b64a281e0fabbecbb44",
+  "tdV1": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+  "tdV2": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:2",
+  "maxRunningSeenDuringUpgrade": 1,
+  "pollsWithZeroRunning": 5,
+  "stopBeforeStartOk": true,
+  "oldTaskStopped": true,
+  "deploymentConfig": {
+    "minimumHealthyPercent": 0,
+    "maximumPercent": 100,
+    "circuitBreaker": {"enable": true, "rollback": true}
+  }
+}

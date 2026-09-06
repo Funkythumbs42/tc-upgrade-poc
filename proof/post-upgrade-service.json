@@ -1,0 +1,47 @@
+{
+    "deployConfig": {
+        "deploymentCircuitBreaker": {
+            "enable": true,
+            "rollback": true,
+            "resetOnHealthyTask": true,
+            "thresholdConfiguration": {
+                "type": "BOUNDED_PERCENT",
+                "value": 50
+            }
+        },
+        "maximumPercent": 100,
+        "minimumHealthyPercent": 0,
+        "strategy": "ROLLING",
+        "bakeTimeInMinutes": 0
+    },
+    "running": 1,
+    "desired": 1,
+    "taskDef": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:2",
+    "events": [
+        {
+            "id": "e7e5179a-0139-40e5-baba-19b092d9792c",
+            "createdAt": "2026-09-06T21:03:50.780000+00:00",
+            "message": "(service tc-upgrade-poc-svc) has started 1 tasks: (task 0e05c8e4d01d4b64a281e0fabbecbb44)."
+        },
+        {
+            "id": "9c26d635-d513-4af9-8fde-3b966dafcd3f",
+            "createdAt": "2026-09-06T21:02:36.851000+00:00",
+            "message": "(service tc-upgrade-poc-svc) has stopped 1 running tasks: (task 4573f4ac370d41f8a497f1fa0badde0b)."
+        },
+        {
+            "id": "847fe841-978e-45a9-8bb9-8435bd82e478",
+            "createdAt": "2026-09-06T21:02:03.087000+00:00",
+            "message": "(service tc-upgrade-poc-svc) has reached a steady state."
+        },
+        {
+            "id": "8717bdc9-4a78-49b9-af65-57b3587631a7",
+            "createdAt": "2026-09-06T21:02:03.086000+00:00",
+            "message": "(service tc-upgrade-poc-svc) (deployment ecs-svc/8815402689408838932) deployment completed."
+        },
+        {
+            "id": "476a751c-9577-4dbb-9a63-57c01507e36e",
+            "createdAt": "2026-09-06T21:01:04.283000+00:00",
+            "message": "(service tc-upgrade-poc-svc) has started 1 tasks: (task 4573f4ac370d41f8a497f1fa0badde0b)."
+        }
+    ]
+}

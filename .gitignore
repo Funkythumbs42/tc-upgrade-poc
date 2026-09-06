@@ -1,0 +1,21 @@
+# Secrets / local credentials — never commit
+.env
+.env.*
+*.pem
+*.key
+credentials
+credentials.csv
+.aws/
+.docker/
+
+# Runtime state from a live POC run (account-specific IDs)
+.state.env
+
+# Local editor / OS
+.DS_Store
+*.swp
+__pycache__/
+*.pyc
+
+# Docker build junk
+.dockerignore.bak

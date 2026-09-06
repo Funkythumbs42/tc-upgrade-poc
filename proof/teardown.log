@@ -1,0 +1,56 @@
+[2026-09-06T21:06:59Z] === Teardown tc-upgrade-poc ===
+[2026-09-06T21:07:00Z] Scaling service to 0...
+[2026-09-06T21:07:12Z] Deleting service...
+[2026-09-06T21:08:19Z] Service deleted/inactive.
+[2026-09-06T21:08:20Z] Deleted cluster tc-upgrade-poc-cluster
+[2026-09-06T21:08:20Z] Deleting EFS mount targets for fs-05f94f48dc5784fab...
+[2026-09-06T21:08:37Z] Deleted EFS fs-05f94f48dc5784fab
+{
+    "Return": true,
+    "RevokedSecurityGroupRules": [
+        {
+            "SecurityGroupRuleId": "sgr-0b09998af5fc06504",
+            "GroupId": "sg-068f9f7fa073dcf66",
+            "IsEgress": false,
+            "IpProtocol": "tcp",
+            "FromPort": 2049,
+            "ToPort": 2049,
+            "ReferencedGroupId": "sg-053c8a6320147b257"
+        }
+    ]
+}
+{
+    "Return": true,
+    "GroupId": "sg-068f9f7fa073dcf66"
+}
+[2026-09-06T21:08:39Z] Deleted SG sg-068f9f7fa073dcf66
+{
+    "Return": true,
+    "GroupId": "sg-053c8a6320147b257"
+}
+[2026-09-06T21:08:40Z] Deleted SG sg-053c8a6320147b257
+[2026-09-06T21:09:01Z] Deleted role tc-upgrade-poc-ecsTaskExecutionRole
+[2026-09-06T21:09:03Z] Deleted role tc-upgrade-poc-ecsTaskRole
+[2026-09-06T21:09:04Z] Deleted log group /ecs/tc-upgrade-poc
+[2026-09-06T21:09:08Z] Deleted ECR repo tc-upgrade-poc
+[2026-09-06T21:09:10Z] Deregistered task definitions for tc-upgrade-poc-task
+[2026-09-06T21:09:10Z] === Verification ===
+{
+  "cluster": "INACTIVE",
+  "efs": [],
+  "ecr": null,
+  "logGroup": null,
+  "taskSg": [],
+  "efsSg": [],
+  "execRole": null,
+  "taskRole": null
+}
+[2026-09-06T21:09:17Z] Tag scan Project=tc-upgrade-poc:
+[
+    "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+    "arn:aws:ecs:eu-west-1:784318225077:service/tc-upgrade-poc-cluster/tc-upgrade-poc-svc",
+    "arn:aws:ecs:eu-west-1:784318225077:cluster/tc-upgrade-poc-cluster",
+    "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:2"
+]
+[2026-09-06T21:09:18Z] === Teardown complete ===
+EXIT:0

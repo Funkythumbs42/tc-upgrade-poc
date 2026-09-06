@@ -1,0 +1,10 @@
+{
+  "cluster": "INACTIVE",
+  "efs": [],
+  "ecr": null,
+  "logGroup": null,
+  "taskSg": [],
+  "efsSg": [],
+  "execRole": null,
+  "taskRole": null
+}

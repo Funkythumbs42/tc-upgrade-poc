@@ -1,0 +1,48 @@
+{
+  "family": "tc-upgrade-poc-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "app",
+      "image": "784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1",
+      "essential": true,
+      "environment": [
+        {"name": "APP_VERSION", "value": "v1"},
+        {"name": "DATA_DIR", "value": "/data"},
+        {"name": "PORT", "value": "8080"}
+      ],
+      "portMappings": [{"containerPort": 8080, "protocol": "tcp"}],
+      "mountPoints": [{"sourceVolume": "efs-data", "containerPath": "/data", "readOnly": false}],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/tc-upgrade-poc",
+          "awslogs-region": "eu-west-1",
+          "awslogs-stream-prefix": "app"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/ >/dev/null || exit 1"],
+        "interval": 10,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-05f94f48dc5784fab",
+        "rootDirectory": "/",
+        "transitEncryption": "ENABLED"
+      }
+    }
+  ]
+}

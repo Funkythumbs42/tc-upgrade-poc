@@ -1,0 +1,7 @@
+{
+    "arn": "arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/0e05c8e4d01d4b64a281e0fabbecbb44",
+    "lastStatus": "RUNNING",
+    "startedAt": "2026-09-06T21:04:12.310000+00:00",
+    "taskDef": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:2",
+    "stoppedReason": null
+}
