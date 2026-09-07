@@ -1,5 +1,5 @@
 {
-  "Comment": "EXAMPLE sketch: TeamCity-style ECS upgrade orchestrator. Runs OUTSIDE the instance being upgraded. BackupRDS (skippable) → Wait → DrainCheck → Deploy → Verify; Catch → Rollback.",
+  "Comment": "TeamCity ECS major-upgrade orchestrator (OUTSIDE the instance being upgraded). BackupRDS (skippable) → Wait → DrainBuildsAndAgents → Deploy → WaitMaintenanceOrBoot → ConfirmMaintenanceUpgrade → WaitDbConversion → PollTeamCityReady; Catch → Rollback (task-def; RDS restore is manual/optional).",
   "StartAt": "BackupRDSChoice",
   "States": {
     "BackupRDSChoice": {
@@ -21,7 +21,7 @@
     },
     "BackupRDS": {
       "Type": "Task",
-      "Comment": "CodeBuild: optional RDS create-db-snapshot",
+      "Comment": "CodeBuild: optional RDS create-db-snapshot (REQUIRED before major jump — downgrade after conversion needs restore)",
       "Resource": "arn:aws:states:::codebuild:startBuild.sync",
       "Parameters": {
         "ProjectName": "${backup_project_name}",
@@ -47,14 +47,21 @@
       "Type": "Wait",
       "Comment": "Maintenance-window padding before drain/deploy",
       "Seconds": ${wait_seconds},
-      "Next": "DrainCheck"
+      "Next": "DrainBuildsAndAgents"
     },
-    "DrainCheck": {
+    "DrainBuildsAndAgents": {
       "Type": "Task",
-      "Comment": "CodeBuild: pre-deploy service drain / readiness check",
+      "Comment": "Preflight: poll TC REST until running builds==0; disable agents / scale agent compute to 0. MUST pass before Deploy.",
       "Resource": "arn:aws:states:::codebuild:startBuild.sync",
       "Parameters": {
-        "ProjectName": "${drain_project_name}"
+        "ProjectName": "${drain_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "TEAMCITY_BASE_URL",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.teamcityBaseUrl"
+          }
+        ]
       },
       "ResultPath": "$.drainResult",
       "Next": "Deploy",
@@ -68,13 +75,13 @@
     },
     "Deploy": {
       "Type": "Task",
-      "Comment": "CodeBuild: run upgrade.sh / force ECS stop-before-start deploy",
+      "Comment": "CodeBuild: stop-before-start ECS deploy of new TeamCity image/task def",
       "Resource": "arn:aws:states:::codebuild:startBuild.sync",
       "Parameters": {
         "ProjectName": "${deploy_project_name}"
       },
       "ResultPath": "$.deployResult",
-      "Next": "Verify",
+      "Next": "WaitMaintenanceOrBoot",
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -83,14 +90,153 @@
         }
       ]
     },
-    "Verify": {
+    "WaitMaintenanceOrBoot": {
       "Type": "Task",
-      "Comment": "CodeBuild: assert running==desired and deployment healthy",
+      "Comment": "Poll until maintenance page OR REST version matches target (major jumps enter Maintenance Mode)",
       "Resource": "arn:aws:states:::codebuild:startBuild.sync",
       "Parameters": {
-        "ProjectName": "${verify_project_name}"
+        "ProjectName": "${poll_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "TEAMCITY_BASE_URL",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.teamcityBaseUrl"
+          },
+          {
+            "Name": "TARGET_TC_VERSION",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.targetTcVersion"
+          },
+          {
+            "Name": "ACCEPT_MAINTENANCE",
+            "Type": "PLAINTEXT",
+            "Value": "1"
+          },
+          {
+            "Name": "REQUIRE_VERSION",
+            "Type": "PLAINTEXT",
+            "Value": "0"
+          },
+          {
+            "Name": "POLL_TIMEOUT_SEC",
+            "Type": "PLAINTEXT",
+            "Value": "${poll_boot_timeout_sec}"
+          }
+        ]
       },
-      "ResultPath": "$.verifyResult",
+      "ResultPath": "$.waitMaintenanceResult",
+      "Next": "ConfirmMaintenanceUpgrade",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "Rollback"
+        }
+      ]
+    },
+    "ConfirmMaintenanceUpgrade": {
+      "Type": "Task",
+      "Comment": "Read Super user/maintenance token from CloudWatch logs and HTTP POST the maintenance form (no official REST API). No-ops if already at target version.",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${confirm_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "TEAMCITY_BASE_URL",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.teamcityBaseUrl"
+          },
+          {
+            "Name": "TARGET_TC_VERSION",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.targetTcVersion"
+          },
+          {
+            "Name": "LOG_GROUP",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.teamcityLogGroup"
+          }
+        ]
+      },
+      "ResultPath": "$.confirmResult",
+      "Next": "WaitDbConversion",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "Rollback"
+        }
+      ]
+    },
+    "WaitDbConversion": {
+      "Type": "Task",
+      "Comment": "Long poll: maintenance gone AND REST version == target (DB/data conversion; 60–120 min typical)",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${wait_db_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "TEAMCITY_BASE_URL",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.teamcityBaseUrl"
+          },
+          {
+            "Name": "TARGET_TC_VERSION",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.targetTcVersion"
+          },
+          {
+            "Name": "POLL_TIMEOUT_SEC",
+            "Type": "PLAINTEXT",
+            "Value": "${wait_db_timeout_sec}"
+          }
+        ]
+      },
+      "ResultPath": "$.waitDbResult",
+      "Next": "PollTeamCityReady",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "Rollback"
+        }
+      ]
+    },
+    "PollTeamCityReady": {
+      "Type": "Task",
+      "Comment": "Final assert: /app/rest/server reports target version (REQUIRE_VERSION=1)",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${poll_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "TEAMCITY_BASE_URL",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.teamcityBaseUrl"
+          },
+          {
+            "Name": "TARGET_TC_VERSION",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.targetTcVersion"
+          },
+          {
+            "Name": "ACCEPT_MAINTENANCE",
+            "Type": "PLAINTEXT",
+            "Value": "0"
+          },
+          {
+            "Name": "REQUIRE_VERSION",
+            "Type": "PLAINTEXT",
+            "Value": "1"
+          },
+          {
+            "Name": "POLL_TIMEOUT_SEC",
+            "Type": "PLAINTEXT",
+            "Value": "${poll_ready_timeout_sec}"
+          }
+        ]
+      },
+      "ResultPath": "$.pollReadyResult",
       "Next": "UpgradeSucceeded",
       "Catch": [
         {
@@ -102,7 +248,7 @@
     },
     "Rollback": {
       "Type": "Task",
-      "Comment": "Catch path: restore previous task definition via CodeBuild",
+      "Comment": "Catch path: restore previous ECS task definition. NOTE: after DB conversion, task-def rollback alone is insufficient — restore RDS/EFS from pre-upgrade snapshot separately (manual/optional state).",
       "Resource": "arn:aws:states:::codebuild:startBuild.sync",
       "Parameters": {
         "ProjectName": "${rollback_project_name}",
@@ -126,7 +272,7 @@
     },
     "UpgradeSucceeded": {
       "Type": "Succeed",
-      "Comment": "Upgrade verified"
+      "Comment": "Major upgrade confirmed; DB conversion complete; target version verified"
     },
     "FailBackup": {
       "Type": "Fail",
@@ -136,12 +282,12 @@
     "FailAfterRollback": {
       "Type": "Fail",
       "Error": "UpgradeFailedRolledBack",
-      "Cause": "Deploy or verify failed; rollback was attempted"
+      "Cause": "Deploy/confirm/wait/poll failed; ECS task-def rollback was attempted. If conversion started, restore RDS/EFS from snapshot manually."
     },
     "FailRollbackAlsoFailed": {
       "Type": "Fail",
       "Error": "UpgradeAndRollbackFailed",
-      "Cause": "Deploy/verify failed and rollback also failed — manual intervention required"
+      "Cause": "Upgrade path failed and task-def rollback also failed — manual intervention required"
     }
   }
 }

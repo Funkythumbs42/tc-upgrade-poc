@@ -70,7 +70,6 @@ resource "aws_iam_role_policy" "codepipeline" {
         Resource = "*"
       },
       {
-        # Manual approval optional SNS notify
         Sid      = "ApprovalNotify"
         Effect   = "Allow"
         Action   = ["sns:Publish"]
@@ -100,13 +99,13 @@ resource "aws_iam_role_policy" "codebuild" {
   name = "${var.project_name}-codebuild-policy"
   role = aws_iam_role.codebuild.id
 
-  # Sketch: ECS deploy/verify + optional RDS snapshot + logs + artifacts.
-  # Narrow Resource ARNs to your cluster/service/DB before production use.
+  # Sketch: ECS deploy/verify + optional RDS snapshot + CW filter for maintenance
+  # token + agent scale-in. Narrow Resource ARNs before production use.
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "Logs"
+        Sid    = "LogsOwn"
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
@@ -114,6 +113,18 @@ resource "aws_iam_role_policy" "codebuild" {
           "logs:PutLogEvents",
         ]
         Resource = "arn:${local.partition}:logs:${var.aws_region}:${local.account_id}:log-group:/aws/codebuild/${var.project_name}-upgrade*"
+      },
+      {
+        Sid    = "FilterTeamCityServerLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:FilterLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents",
+        ]
+        # Prefer narrowing to var.teamcity_log_group in real envs
+        Resource = "*"
       },
       {
         Sid    = "ArtifactsS3"
@@ -137,6 +148,7 @@ resource "aws_iam_role_policy" "codebuild" {
           "ecs:RegisterTaskDefinition",
           "ecs:UpdateService",
           "ecs:StopTask",
+          "ecs:ExecuteCommand",
         ]
         Resource = "*"
       },
@@ -159,6 +171,16 @@ resource "aws_iam_role_policy" "codebuild" {
           "rds:CreateDBSnapshot",
           "rds:DescribeDBSnapshots",
           "rds:AddTagsToResource",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AgentScaleIn"
+        Effect = "Allow"
+        Action = [
+          "autoscaling:SetDesiredCapacity",
+          "autoscaling:UpdateAutoScalingGroup",
+          "autoscaling:DescribeAutoScalingGroups",
         ]
         Resource = "*"
       },
@@ -209,13 +231,7 @@ resource "aws_iam_role_policy" "sfn" {
           "codebuild:StopBuild",
           "codebuild:BatchGetBuilds",
         ]
-        Resource = [
-          aws_codebuild_project.backup.arn,
-          aws_codebuild_project.drain.arn,
-          aws_codebuild_project.deploy.arn,
-          aws_codebuild_project.verify.arn,
-          aws_codebuild_project.rollback.arn,
-        ]
+        Resource = [for p in aws_codebuild_project.phase : p.arn]
       },
       {
         Sid    = "CodeBuildEventsForSync"

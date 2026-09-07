@@ -4,15 +4,18 @@
 # IMPORTANT: these builders must NOT run on the TeamCity host being upgraded.
 
 locals {
-  # Shared buildspec: checkout is already done by CodePipeline artifact;
-  # for SFN-started builds we clone via env GITHUB_* or use Source from the project.
-  # Here each project uses GITHUB as source so SFN can StartBuild without a pipeline artifact.
   build_env = {
-    ECS_CLUSTER  = var.ecs_cluster_name
-    ECS_SERVICE  = var.ecs_service_name
-    AWS_REGION   = var.aws_region
-    PROJECT_NAME = var.project_name
-    RDS_DB_ID    = var.rds_db_instance_identifier
+    ECS_CLUSTER       = var.ecs_cluster_name
+    ECS_SERVICE       = var.ecs_service_name
+    AWS_REGION        = var.aws_region
+    PROJECT_NAME      = var.project_name
+    RDS_DB_ID         = var.rds_db_instance_identifier
+    TEAMCITY_BASE_URL = var.teamcity_base_url
+    TARGET_TC_VERSION = var.target_tc_version
+    LOG_GROUP         = var.teamcity_log_group
+    AGENT_ECS_CLUSTER = var.agent_ecs_cluster_name
+    AGENT_ECS_SERVICE = var.agent_ecs_service_name
+    AGENT_ASG_NAME    = var.agent_asg_name
   }
 }
 
@@ -21,11 +24,11 @@ resource "aws_cloudwatch_log_group" "codebuild" {
   retention_in_days = 14
 }
 
-# Helper: one module-like inline project definition via for_each
 locals {
   build_phases = {
     backup = {
       description = "Optional RDS snapshot before upgrade"
+      timeout     = 30
       commands = [
         "echo \"=== BackupRDS (skippable) ===\"",
         "if [ -z \"$${RDS_DB_ID}\" ]; then echo \"RDS_DB_ID empty — skip\"; exit 0; fi",
@@ -36,45 +39,71 @@ locals {
       ]
     }
     drain = {
-      description = "Pre-deploy drain / health check"
+      description = "Preflight: drain running builds + disable/scale-in agents (scripts/drain-builds-and-agents.sh)"
+      timeout     = 45
       commands = [
-        "echo \"=== DrainCheck ===\"",
-        "aws ecs describe-services --cluster \"$${ECS_CLUSTER}\" --services \"$${ECS_SERVICE}\" --output json | tee drain-status.json",
-        "RUNNING=$$(jq -r '.services[0].runningCount // 0' drain-status.json)",
-        "echo \"runningCount=$${RUNNING}\"",
-        "# Sketch: assert service is stable enough to upgrade; real drain logic goes here",
+        "echo \"=== DrainBuildsAndAgents ===\"",
+        "chmod +x scripts/*.sh || true",
+        "if [ -z \"$${TEAMCITY_BASE_URL}\" ]; then",
+        "  echo \"TEAMCITY_BASE_URL empty — sketch fallback: ECS describe only\"",
+        "  aws ecs describe-services --cluster \"$${ECS_CLUSTER}\" --services \"$${ECS_SERVICE}\" --output json | tee drain-status.json",
+        "  exit 0",
+        "fi",
+        "# Inject TEAMCITY_BEARER_TOKEN from SSM/Secrets Manager in real envs (never commit)",
+        "./scripts/drain-builds-and-agents.sh",
       ]
     }
     deploy = {
       description = "Run upgrade.sh from this repo (stop-before-start ECS pattern)"
+      timeout     = 45
       commands = [
         "echo \"=== Deploy (upgrade.sh) ===\"",
         "ls -la",
-        "chmod +x *.sh || true",
-        "# Production: ensure .state.env / config is injected via SSM or prior provision stage",
-        "# Sketch invokes upgrade.sh when state is present; otherwise dry-run describe:",
+        "chmod +x *.sh scripts/*.sh || true",
         "if [ -f .state.env ]; then ./upgrade.sh; else",
         "  echo \"No .state.env — sketch dry-run: force new deployment\"",
         "  aws ecs update-service --cluster \"$${ECS_CLUSTER}\" --service \"$${ECS_SERVICE}\" --force-new-deployment",
         "fi",
       ]
     }
-    verify = {
-      description = "Verify post-upgrade (running count, task def, optional marker)"
+    poll = {
+      description = "Poll TC ready or maintenance (scripts/poll-tc-ready.sh); env overrides ACCEPT_MAINTENANCE/REQUIRE_VERSION"
+      timeout     = 60
       commands = [
-        "echo \"=== Verify ===\"",
-        "aws ecs describe-services --cluster \"$${ECS_CLUSTER}\" --services \"$${ECS_SERVICE}\" --output json | tee verify-status.json",
-        "PRIMARY=$$(jq -r '.services[0].deployments[] | select(.status==\"PRIMARY\") | .rolloutState // .runningCount' verify-status.json)",
-        "echo \"primary=$${PRIMARY}\"",
-        "RUNNING=$$(jq -r '.services[0].runningCount // 0' verify-status.json)",
-        "DESIRED=$$(jq -r '.services[0].desiredCount // 0' verify-status.json)",
-        "test \"$${RUNNING}\" = \"$${DESIRED}\" || (echo \"Verify failed: running!=desired\" && exit 1)",
+        "echo \"=== PollTeamCity (poll-tc-ready.sh) ===\"",
+        "chmod +x scripts/*.sh || true",
+        "test -n \"$${TEAMCITY_BASE_URL}\" || (echo \"TEAMCITY_BASE_URL required\" && exit 1)",
+        "test -n \"$${TARGET_TC_VERSION}\" || (echo \"TARGET_TC_VERSION required\" && exit 1)",
+        "./scripts/poll-tc-ready.sh",
+      ]
+    }
+    confirm = {
+      description = "Confirm maintenance upgrade via log token + HTTP POST (scripts/confirm-tc-maintenance-upgrade.sh)"
+      timeout     = 60
+      commands = [
+        "echo \"=== ConfirmMaintenanceUpgrade ===\"",
+        "chmod +x scripts/*.sh || true",
+        "test -n \"$${TEAMCITY_BASE_URL}\" || (echo \"TEAMCITY_BASE_URL required\" && exit 1)",
+        "./scripts/confirm-tc-maintenance-upgrade.sh",
+      ]
+    }
+    wait_db = {
+      description = "Wait for DB/data conversion after confirm (scripts/wait-db-upgrade.sh); long timeout"
+      timeout     = 150
+      commands = [
+        "echo \"=== WaitDbConversion ===\"",
+        "chmod +x scripts/*.sh || true",
+        "test -n \"$${TEAMCITY_BASE_URL}\" || (echo \"TEAMCITY_BASE_URL required\" && exit 1)",
+        "test -n \"$${TARGET_TC_VERSION}\" || (echo \"TARGET_TC_VERSION required\" && exit 1)",
+        "./scripts/wait-db-upgrade.sh",
       ]
     }
     rollback = {
-      description = "Catch path: roll back ECS service to previous task definition"
+      description = "Catch path: roll back ECS service to previous task definition (RDS restore is separate/manual)"
+      timeout     = 30
       commands = [
-        "echo \"=== Rollback ===\"",
+        "echo \"=== Rollback (task-def only) ===\"",
+        "echo \"NOTE: After DB conversion, restore RDS/EFS from pre-upgrade snapshot manually if needed.\"",
         "PREV=\"$${PREVIOUS_TASK_DEFINITION_ARN:-}\"",
         "if [ -z \"$${PREV}\" ]; then",
         "  echo \"No PREVIOUS_TASK_DEFINITION_ARN — attempt circuit-breaker / describe only\"",
@@ -88,11 +117,14 @@ locals {
   }
 }
 
-resource "aws_codebuild_project" "backup" {
-  name          = "${var.project_name}-backup"
-  description   = local.build_phases.backup.description
+# Shared project factory via for_each
+resource "aws_codebuild_project" "phase" {
+  for_each = local.build_phases
+
+  name          = "${var.project_name}-${each.key == "wait_db" ? "wait-db" : each.key}"
+  description   = each.value.description
   service_role  = aws_iam_role.codebuild.arn
-  build_timeout = 30
+  build_timeout = each.value.timeout
 
   artifacts {
     type = "NO_ARTIFACTS"
@@ -126,7 +158,7 @@ resource "aws_codebuild_project" "backup" {
           ]
         }
         build = {
-          commands = local.build_phases.backup.commands
+          commands = each.value.commands
         }
       }
     })
@@ -136,187 +168,18 @@ resource "aws_codebuild_project" "backup" {
   logs_config {
     cloudwatch_logs {
       group_name  = aws_cloudwatch_log_group.codebuild.name
-      stream_name = "backup"
+      stream_name = each.key
     }
   }
 }
 
-resource "aws_codebuild_project" "drain" {
-  name          = "${var.project_name}-drain"
-  description   = local.build_phases.drain.description
-  service_role  = aws_iam_role.codebuild.arn
-  build_timeout = 15
-
-  artifacts { type = "NO_ARTIFACTS" }
-
-  environment {
-    compute_type                = var.codebuild_compute_type
-    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
-    type                        = "LINUX_CONTAINER"
-    image_pull_credentials_type = "CODEBUILD"
-    privileged_mode             = false
-
-    dynamic "environment_variable" {
-      for_each = local.build_env
-      content {
-        name  = environment_variable.key
-        value = environment_variable.value
-      }
-    }
-  }
-
-  source {
-    type     = "GITHUB"
-    location = "https://github.com/${var.github_owner}/${var.github_repo}.git"
-    buildspec = yamlencode({
-      version = "0.2"
-      phases = {
-        install = { commands = ["yum install -y jq || true"] }
-        build   = { commands = local.build_phases.drain.commands }
-      }
-    })
-    git_clone_depth = 1
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebuild.name
-      stream_name = "drain"
-    }
-  }
-}
-
-resource "aws_codebuild_project" "deploy" {
-  name          = "${var.project_name}-deploy"
-  description   = local.build_phases.deploy.description
-  service_role  = aws_iam_role.codebuild.arn
-  build_timeout = 45
-
-  artifacts { type = "NO_ARTIFACTS" }
-
-  environment {
-    compute_type                = var.codebuild_compute_type
-    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
-    type                        = "LINUX_CONTAINER"
-    image_pull_credentials_type = "CODEBUILD"
-    privileged_mode             = false
-
-    dynamic "environment_variable" {
-      for_each = local.build_env
-      content {
-        name  = environment_variable.key
-        value = environment_variable.value
-      }
-    }
-  }
-
-  source {
-    type     = "GITHUB"
-    location = "https://github.com/${var.github_owner}/${var.github_repo}.git"
-    buildspec = yamlencode({
-      version = "0.2"
-      phases = {
-        install = { commands = ["yum install -y jq || true"] }
-        build   = { commands = local.build_phases.deploy.commands }
-      }
-    })
-    git_clone_depth = 1
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebuild.name
-      stream_name = "deploy"
-    }
-  }
-}
-
-resource "aws_codebuild_project" "verify" {
-  name          = "${var.project_name}-verify"
-  description   = local.build_phases.verify.description
-  service_role  = aws_iam_role.codebuild.arn
-  build_timeout = 20
-
-  artifacts { type = "NO_ARTIFACTS" }
-
-  environment {
-    compute_type                = var.codebuild_compute_type
-    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
-    type                        = "LINUX_CONTAINER"
-    image_pull_credentials_type = "CODEBUILD"
-    privileged_mode             = false
-
-    dynamic "environment_variable" {
-      for_each = local.build_env
-      content {
-        name  = environment_variable.key
-        value = environment_variable.value
-      }
-    }
-  }
-
-  source {
-    type     = "GITHUB"
-    location = "https://github.com/${var.github_owner}/${var.github_repo}.git"
-    buildspec = yamlencode({
-      version = "0.2"
-      phases = {
-        install = { commands = ["yum install -y jq || true"] }
-        build   = { commands = local.build_phases.verify.commands }
-      }
-    })
-    git_clone_depth = 1
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebuild.name
-      stream_name = "verify"
-    }
-  }
-}
-
-resource "aws_codebuild_project" "rollback" {
-  name          = "${var.project_name}-rollback"
-  description   = local.build_phases.rollback.description
-  service_role  = aws_iam_role.codebuild.arn
-  build_timeout = 30
-
-  artifacts { type = "NO_ARTIFACTS" }
-
-  environment {
-    compute_type                = var.codebuild_compute_type
-    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
-    type                        = "LINUX_CONTAINER"
-    image_pull_credentials_type = "CODEBUILD"
-    privileged_mode             = false
-
-    dynamic "environment_variable" {
-      for_each = local.build_env
-      content {
-        name  = environment_variable.key
-        value = environment_variable.value
-      }
-    }
-  }
-
-  source {
-    type     = "GITHUB"
-    location = "https://github.com/${var.github_owner}/${var.github_repo}.git"
-    buildspec = yamlencode({
-      version = "0.2"
-      phases = {
-        install = { commands = ["yum install -y jq || true"] }
-        build   = { commands = local.build_phases.rollback.commands }
-      }
-    })
-    git_clone_depth = 1
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebuild.name
-      stream_name = "rollback"
-    }
-  }
+# Convenience aliases matching previous resource names (and ASL wiring)
+locals {
+  codebuild_backup   = aws_codebuild_project.phase["backup"]
+  codebuild_drain    = aws_codebuild_project.phase["drain"]
+  codebuild_deploy   = aws_codebuild_project.phase["deploy"]
+  codebuild_poll     = aws_codebuild_project.phase["poll"]
+  codebuild_confirm  = aws_codebuild_project.phase["confirm"]
+  codebuild_wait_db  = aws_codebuild_project.phase["wait_db"]
+  codebuild_rollback = aws_codebuild_project.phase["rollback"]
 }

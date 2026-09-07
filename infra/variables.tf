@@ -53,7 +53,7 @@ variable "ecs_service_name" {
 }
 
 variable "rds_db_instance_identifier" {
-  description = "Optional RDS DB instance id to snapshot before upgrade. Empty string skips BackupRDS."
+  description = "Optional RDS DB instance id to snapshot before upgrade. Empty string skips BackupRDS. Strongly recommended for major jumps."
   type        = string
   default     = ""
 }
@@ -74,4 +74,58 @@ variable "codebuild_compute_type" {
   description = "CodeBuild compute type for the upgrade runner."
   type        = string
   default     = "BUILD_GENERAL1_SMALL"
+}
+
+variable "teamcity_base_url" {
+  description = "Base URL of the TeamCity server (e.g. https://teamcity.example.com). Passed to drain/confirm/poll scripts."
+  type        = string
+  default     = ""
+}
+
+variable "target_tc_version" {
+  description = "Target TeamCity version string expected from /app/rest/server after upgrade (e.g. 2025.07.3)."
+  type        = string
+  default     = ""
+}
+
+variable "teamcity_log_group" {
+  description = "CloudWatch Logs group for the TeamCity server container (source of Super user / maintenance token)."
+  type        = string
+  default     = ""
+}
+
+variable "agent_ecs_cluster_name" {
+  description = "Optional ECS cluster hosting build agents; scaled to 0 during preflight drain."
+  type        = string
+  default     = ""
+}
+
+variable "agent_ecs_service_name" {
+  description = "Optional ECS service name for build agents; desiredCount set to 0 during drain."
+  type        = string
+  default     = ""
+}
+
+variable "agent_asg_name" {
+  description = "Optional Auto Scaling Group name for EC2 build agents; desired capacity set to 0 during drain."
+  type        = string
+  default     = ""
+}
+
+variable "poll_boot_timeout_sec" {
+  description = "Timeout for WaitMaintenanceOrBoot (maintenance page OR version)."
+  type        = number
+  default     = 1800
+}
+
+variable "wait_db_timeout_sec" {
+  description = "Timeout for WaitDbConversion after maintenance confirm (DB/data conversion can be long)."
+  type        = number
+  default     = 5400
+}
+
+variable "poll_ready_timeout_sec" {
+  description = "Timeout for final PollTeamCityReady (REQUIRE_VERSION=1)."
+  type        = number
+  default     = 1800
 }

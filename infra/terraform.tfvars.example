@@ -12,3 +12,17 @@ ecs_service_name            = "tc-upgrade-poc-svc"
 rds_db_instance_identifier  = ""   # set for real TeamCity+RDS; leave empty to skip backup step
 # approval_sns_topic_arn    = "arn:aws:sns:eu-west-1:ACCOUNT:tc-upgrade-approvals"
 wait_seconds_before_drain   = 60
+
+# Major-jump / maintenance confirm
+teamcity_base_url           = ""   # e.g. https://teamcity.example.com
+target_tc_version           = ""   # e.g. 2025.07.3
+teamcity_log_group          = ""   # CloudWatch group with teamcity-server.log lines
+
+# Preflight agent drain (optional)
+agent_ecs_cluster_name      = ""
+agent_ecs_service_name      = ""
+agent_asg_name              = ""
+
+poll_boot_timeout_sec       = 1800
+wait_db_timeout_sec         = 5400
+poll_ready_timeout_sec      = 1800
