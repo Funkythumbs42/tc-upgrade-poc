@@ -11,6 +11,19 @@ credentials.csv
 # Runtime state from a live POC run (account-specific IDs)
 .state.env
 
+# Terraform (sketch under infra/ — never commit state or local plugins)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # Local editor / OS
 .DS_Store
 *.swp

@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars (gitignored via *.tfvars if you prefer — this example is safe).
+# Fill real values before plan; never commit secrets or real connection tokens.
+
+aws_region                  = "eu-west-1"
+project_name                = "tc-upgrade-poc"
+github_connection_arn       = "arn:aws:codestar-connections:eu-west-1:ACCOUNT:connection/UUID"
+github_owner                = "Funkythumbs42"
+github_repo                 = "tc-upgrade-poc"
+github_branch               = "main"
+ecs_cluster_name            = "tc-upgrade-poc-cluster"
+ecs_service_name            = "tc-upgrade-poc-svc"
+rds_db_instance_identifier  = ""   # set for real TeamCity+RDS; leave empty to skip backup step
+# approval_sns_topic_arn    = "arn:aws:sns:eu-west-1:ACCOUNT:tc-upgrade-approvals"
+wait_seconds_before_drain   = 60

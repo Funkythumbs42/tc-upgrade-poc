@@ -1,0 +1,147 @@
+{
+  "Comment": "EXAMPLE sketch: TeamCity-style ECS upgrade orchestrator. Runs OUTSIDE the instance being upgraded. BackupRDS (skippable) → Wait → DrainCheck → Deploy → Verify; Catch → Rollback.",
+  "StartAt": "BackupRDSChoice",
+  "States": {
+    "BackupRDSChoice": {
+      "Type": "Choice",
+      "Comment": "Skip RDS snapshot when rdsDbInstanceIdentifier is empty",
+      "Choices": [
+        {
+          "Variable": "$.rdsDbInstanceIdentifier",
+          "StringEquals": "",
+          "Next": "WaitBeforeDrain"
+        },
+        {
+          "Variable": "$.skipRdsBackup",
+          "BooleanEquals": true,
+          "Next": "WaitBeforeDrain"
+        }
+      ],
+      "Default": "BackupRDS"
+    },
+    "BackupRDS": {
+      "Type": "Task",
+      "Comment": "CodeBuild: optional RDS create-db-snapshot",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${backup_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "RDS_DB_ID",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.rdsDbInstanceIdentifier"
+          }
+        ]
+      },
+      "ResultPath": "$.backupResult",
+      "Next": "WaitBeforeDrain",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "FailBackup"
+        }
+      ]
+    },
+    "WaitBeforeDrain": {
+      "Type": "Wait",
+      "Comment": "Maintenance-window padding before drain/deploy",
+      "Seconds": ${wait_seconds},
+      "Next": "DrainCheck"
+    },
+    "DrainCheck": {
+      "Type": "Task",
+      "Comment": "CodeBuild: pre-deploy service drain / readiness check",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${drain_project_name}"
+      },
+      "ResultPath": "$.drainResult",
+      "Next": "Deploy",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "Rollback"
+        }
+      ]
+    },
+    "Deploy": {
+      "Type": "Task",
+      "Comment": "CodeBuild: run upgrade.sh / force ECS stop-before-start deploy",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${deploy_project_name}"
+      },
+      "ResultPath": "$.deployResult",
+      "Next": "Verify",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "Rollback"
+        }
+      ]
+    },
+    "Verify": {
+      "Type": "Task",
+      "Comment": "CodeBuild: assert running==desired and deployment healthy",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${verify_project_name}"
+      },
+      "ResultPath": "$.verifyResult",
+      "Next": "UpgradeSucceeded",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "Rollback"
+        }
+      ]
+    },
+    "Rollback": {
+      "Type": "Task",
+      "Comment": "Catch path: restore previous task definition via CodeBuild",
+      "Resource": "arn:aws:states:::codebuild:startBuild.sync",
+      "Parameters": {
+        "ProjectName": "${rollback_project_name}",
+        "EnvironmentVariablesOverride": [
+          {
+            "Name": "PREVIOUS_TASK_DEFINITION_ARN",
+            "Type": "PLAINTEXT",
+            "Value.$": "$.previousTaskDefinitionArn"
+          }
+        ]
+      },
+      "ResultPath": "$.rollbackResult",
+      "Next": "FailAfterRollback",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.rollbackError",
+          "Next": "FailRollbackAlsoFailed"
+        }
+      ]
+    },
+    "UpgradeSucceeded": {
+      "Type": "Succeed",
+      "Comment": "Upgrade verified"
+    },
+    "FailBackup": {
+      "Type": "Fail",
+      "Error": "BackupFailed",
+      "Cause": "RDS backup / snapshot step failed before deploy"
+    },
+    "FailAfterRollback": {
+      "Type": "Fail",
+      "Error": "UpgradeFailedRolledBack",
+      "Cause": "Deploy or verify failed; rollback was attempted"
+    },
+    "FailRollbackAlsoFailed": {
+      "Type": "Fail",
+      "Error": "UpgradeAndRollbackFailed",
+      "Cause": "Deploy/verify failed and rollback also failed — manual intervention required"
+    }
+  }
+}

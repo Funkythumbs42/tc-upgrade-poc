@@ -52,3 +52,54 @@ Tags applied: `Project=tc-upgrade-poc`, `Owner=greg`, `KeepUntil=same-day-teardo
 ## Cost / safety
 
 Prefer free-tier-ish: tiny Fargate, skip RDS/ALB/NAT. Tear down the same session. Do not touch unrelated resources.
+
+## Production orchestration
+
+For a real upgrade (outside this free-tier POC), keep the **orchestrator off the TeamCity being upgraded**:
+
+| Piece | Role |
+|-------|------|
+| **CodePipeline** | Start + **manual approval** UX |
+| **Step Functions** | Orchestrator (waits, deploy, verify, rollback) |
+| **CodeBuild** | Runs upgrade scripts from this git repo |
+
+Sketch Terraform lives under [`infra/`](./infra/) — **example only; do not blind-apply to prod**. See [`infra/README.md`](./infra/README.md).
+
+```mermaid
+flowchart LR
+  subgraph Pipeline["CodePipeline"]
+    S[Source<br/>CodeStar→GitHub] --> A[Manual approval]
+    A --> I[Invoke Step Functions]
+  end
+
+  subgraph SFN["Step Functions (orchestrator)"]
+    B{BackupRDS<br/>skippable} --> W[Wait]
+    W --> D[DrainCheck]
+    D --> U[Deploy]
+    U --> V[Verify]
+    D -. fail .-> R[Rollback]
+    U -. fail .-> R
+    V -. fail .-> R
+  end
+
+  I --> B
+  B --> CB[(CodeBuild<br/>aws cli + bash)]
+  D --> CB
+  U --> CB
+  V --> CB
+  R --> CB
+  CB --> ECS[ECS service<br/>being upgraded]
+```
+
+ASCII equivalent:
+
+```
+CodePipeline:  Source → Manual approval → StartExecution(SFN)
+                      │
+Step Functions:       ▼
+              BackupRDS? ──(skip if no RDS id)──► Wait → DrainCheck → Deploy → Verify → Succeed
+                                                      │         │        │
+                                                      └──── fail ┴─ fail ┴─ fail ──► Rollback → Fail
+                                                                    │
+CodeBuild (NOT on TC host):  backup | drain | upgrade.sh | verify | rollback
+```
