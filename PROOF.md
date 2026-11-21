@@ -1,6 +1,6 @@
 # PROOF: TeamCity-style ECS Fargate stop-before-start POC
 
-**Account:** 784318225077 (user Greg)
+**Account:** 123456789012 (user Greg)
 **Region:** eu-west-1
 **Date:** 2026-09-06 (same-day teardown)
 **Tags:** `Project=tc-upgrade-poc`, `Owner=greg`, `KeepUntil=same-day-teardown`

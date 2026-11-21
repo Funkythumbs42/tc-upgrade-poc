@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/tc-upgrade-poc-ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/tc-upgrade-poc-ecsTaskRole",
   "containerDefinitions": [
     {
       "name": "app",
-      "image": "784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1",
+      "image": "123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1",
       "essential": true,
       "environment": [
         {"name": "APP_VERSION", "value": "v2"},

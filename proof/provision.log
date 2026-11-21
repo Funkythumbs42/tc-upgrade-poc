@@ -69,10 +69,10 @@ Login Succeeded
 #9 exporting layers
 #9 exporting layers 0.8s done
 #9 writing image sha256:7602fb96d879efa4c3ef3909acfcbee82f30426077944eb34f7229b5373ff457 done
-#9 naming to 784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1 done
-#9 naming to 784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:latest done
+#9 naming to 123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1 done
+#9 naming to 123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:latest done
 #9 DONE 0.8s
-The push refers to repository [784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc]
+The push refers to repository [123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc]
 a02375fecc47: Preparing
 f7d49fa6b2cc: Preparing
 c942875fa120: Preparing
@@ -90,7 +90,7 @@ a02375fecc47: Pushed
 34884abbe928: Pushed
 e5ccda0fbf6b: Pushed
 v1: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622f1d6d31 size: 1776
-The push refers to repository [784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc]
+The push refers to repository [123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc]
 a02375fecc47: Preparing
 f7d49fa6b2cc: Preparing
 c942875fa120: Preparing
@@ -108,14 +108,14 @@ e5ccda0fbf6b: Layer already exists
 3ca4be2c6e9a: Layer already exists
 34884abbe928: Layer already exists
 latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622f1d6d31 size: 1776
-[2026-09-06T21:00:45Z] Image pushed 784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1
+[2026-09-06T21:00:45Z] Image pushed 123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc:v1
 [2026-09-06T21:00:47Z] Created cluster tc-upgrade-poc-cluster
-[2026-09-06T21:00:48Z] Registered task def arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1
+[2026-09-06T21:00:48Z] Registered task def arn:aws:ecs:eu-west-1:123456789012:task-definition/tc-upgrade-poc-task:1
 {
     "service": {
-        "serviceArn": "arn:aws:ecs:eu-west-1:784318225077:service/tc-upgrade-poc-cluster/tc-upgrade-poc-svc",
+        "serviceArn": "arn:aws:ecs:eu-west-1:123456789012:service/tc-upgrade-poc-cluster/tc-upgrade-poc-svc",
         "serviceName": "tc-upgrade-poc-svc",
-        "clusterArn": "arn:aws:ecs:eu-west-1:784318225077:cluster/tc-upgrade-poc-cluster",
+        "clusterArn": "arn:aws:ecs:eu-west-1:123456789012:cluster/tc-upgrade-poc-cluster",
         "loadBalancers": [],
         "serviceRegistries": [],
         "status": "ACTIVE",
@@ -125,7 +125,7 @@ latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622
         "launchType": "FARGATE",
         "platformVersion": "LATEST",
         "platformFamily": "Linux",
-        "taskDefinition": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+        "taskDefinition": "arn:aws:ecs:eu-west-1:123456789012:task-definition/tc-upgrade-poc-task:1",
         "deploymentConfiguration": {
             "deploymentCircuitBreaker": {
                 "enable": true,
@@ -145,7 +145,7 @@ latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622
             {
                 "id": "ecs-svc/8815402689408838932",
                 "status": "PRIMARY",
-                "taskDefinition": "arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1",
+                "taskDefinition": "arn:aws:ecs:eu-west-1:123456789012:task-definition/tc-upgrade-poc-task:1",
                 "desiredCount": 0,
                 "pendingCount": 0,
                 "runningCount": 0,
@@ -171,12 +171,12 @@ latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622
                 "rolloutStateReason": "ECS deployment ecs-svc/8815402689408838932 in progress."
             }
         ],
-        "roleArn": "arn:aws:iam::784318225077:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+        "roleArn": "arn:aws:iam::123456789012:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
         "events": [],
         "createdAt": "2026-09-06T21:00:51.035000+00:00",
         "currentServiceRevisions": [
             {
-                "arn": "arn:aws:ecs:eu-west-1:784318225077:service-revision/tc-upgrade-poc-cluster/tc-upgrade-poc-svc/8815402689408838932",
+                "arn": "arn:aws:ecs:eu-west-1:123456789012:service-revision/tc-upgrade-poc-cluster/tc-upgrade-poc-svc/8815402689408838932",
                 "requestedTaskCount": 0,
                 "runningTaskCount": 0,
                 "pendingTaskCount": 0
@@ -215,7 +215,7 @@ latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622
                 "value": "greg"
             }
         ],
-        "createdBy": "arn:aws:iam::784318225077:user/Greg",
+        "createdBy": "arn:aws:iam::123456789012:user/Greg",
         "enableECSManagedTags": false,
         "propagateTags": "NONE",
         "enableExecuteCommand": true,
@@ -226,7 +226,7 @@ latest: digest: sha256:2aa50a6a0db6297ec8fa2726b814b11f95ab06e45df8d9c9c824f1622
 [2026-09-06T21:00:51Z] Created service tc-upgrade-poc-svc
 [2026-09-06T21:00:51Z] Waiting for service tc-upgrade-poc-svc to become stable (timeout 600s)...
 [2026-09-06T21:01:38Z] Service is stable.
-[2026-09-06T21:01:38Z] v1 running task: arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b
+[2026-09-06T21:01:38Z] v1 running task: arn:aws:ecs:eu-west-1:123456789012:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b
 [2026-09-06T21:01:55Z] === Provision complete ===
 [2026-09-06T21:01:55Z] State file: /workspace/tc-upgrade-poc/.state.env
 export VPC_ID=vpc-0f76dfac7c9499bd8
@@ -236,9 +236,9 @@ export SUBNET3=subnet-024f1af47262b68ca
 export TASK_SG=sg-053c8a6320147b257
 export EFS_SG=sg-068f9f7fa073dcf66
 export FS_ID=fs-05f94f48dc5784fab
-export EXEC_ROLE_ARN=arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskExecutionRole
-export TASK_ROLE_ARN=arn:aws:iam::784318225077:role/tc-upgrade-poc-ecsTaskRole
-export ECR_URI=784318225077.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc
-export TD_V1_ARN=arn:aws:ecs:eu-west-1:784318225077:task-definition/tc-upgrade-poc-task:1
-export TD_V1_TASK_ARN=arn:aws:ecs:eu-west-1:784318225077:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b
+export EXEC_ROLE_ARN=arn:aws:iam::123456789012:role/tc-upgrade-poc-ecsTaskExecutionRole
+export TASK_ROLE_ARN=arn:aws:iam::123456789012:role/tc-upgrade-poc-ecsTaskRole
+export ECR_URI=123456789012.dkr.ecr.eu-west-1.amazonaws.com/tc-upgrade-poc
+export TD_V1_ARN=arn:aws:ecs:eu-west-1:123456789012:task-definition/tc-upgrade-poc-task:1
+export TD_V1_TASK_ARN=arn:aws:ecs:eu-west-1:123456789012:task/tc-upgrade-poc-cluster/4573f4ac370d41f8a497f1fa0badde0b
 EXIT:0

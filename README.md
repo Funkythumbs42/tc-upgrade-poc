@@ -14,7 +14,7 @@ This is **not** a real TeamCity+RDS stack (that is not free). It exercises the s
 
 ## Results
 
-See **[PROOF.md](./PROOF.md)** for the 2026-09-06 end-to-end run in account `784318225077` / `eu-west-1`:
+See **[PROOF.md](./PROOF.md)** for the 2026-09-06 end-to-end run in account `123456789012` / `eu-west-1`:
 
 - Stop-before-start confirmed (`maxRunningSeenDuringUpgrade=1`, zero-running gap)
 - EFS marker survived (`written_by=v1` found by v2)
